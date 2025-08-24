@@ -1,6 +1,4 @@
-import 'dart:async';
-
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:async' show Timer;
 import 'package:flutter/material.dart';
 
 class StoryViewPage extends StatefulWidget {
