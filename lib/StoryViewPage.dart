@@ -2,17 +2,24 @@ import 'dart:async' show Timer;
 import 'dart:async';
 
 
+import 'package:commodo_widgets_example/features/commodo_histories/ui/widgets/contents/story_image_content.dart';
+import 'package:commodo_widgets_example/features/commodo_histories/ui/widgets/contents/story_video_content.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+
+import 'features/commodo_histories/domain/entites/history_entity.dart';
+import 'features/commodo_histories/ui/widgets/contents/story_gif_content.dart';
+import 'features/commodo_histories/ui/widgets/story_progress_bar.dart';
+import 'features/commodo_histories/ui/widgets/story_top_bar.dart';
 
 class StoryViewPage extends StatefulWidget {
   const StoryViewPage({super.key});
 
   @override
-  _StoryViewPageState createState() => _StoryViewPageState();
+  StoryViewPageState createState() => StoryViewPageState();
 }
 
-class _StoryViewPageState extends State<StoryViewPage> {
+class StoryViewPageState extends State<StoryViewPage> {
   final PageController _pageController = PageController(
 
   );
@@ -41,19 +48,9 @@ class _StoryViewPageState extends State<StoryViewPage> {
 
 
   ];
-  final List<NetworkImage> images=[
-    NetworkImage('https://images.unsplash.com/photo-1506744038136-46273834b3fb'),
-    NetworkImage('https://images.unsplash.com/photo-1495567720989-cebdbdd97913'),
-    NetworkImage('https://images.unsplash.com/photo-1522206024047-9c925421675b'),
-    NetworkImage('https://images.unsplash.com/photo-1470770903676-69b98201ea1c'),
-  ];
+
 
   List<StoryContent> storyWidgets = [];
-
-
-
-
-
   static const Duration storyDuration = Duration(seconds: 5);
   static const Duration tick = Duration(milliseconds: 10);
 
@@ -72,7 +69,6 @@ class _StoryViewPageState extends State<StoryViewPage> {
     _progressValues = List.generate(storyAssets.length, (_) => 0.0);
     storyWidgets= List.generate(storyAssets.length, (index) {
       return StoryContent(
-        imagePath: storyAssets[index].url,
         onBack: _goToBackStory,
         onNext: _onTapNextHistory,
         onPause: () => _timer?.cancel(),
@@ -188,60 +184,11 @@ class _StoryViewPageState extends State<StoryViewPage> {
   }
 }
 
-class StoryProgressBar extends StatelessWidget {
-  final List<double> progressValues;
 
-  const StoryProgressBar({super.key, required this.progressValues});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: List.generate(progressValues.length, (i) {
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2.0),
-            child: LinearProgressIndicator(
-              value: progressValues[i],
-              backgroundColor: Colors.white.withOpacity(0.3),
-              color: Colors.black,
-              minHeight: 3,
-            ),
-          ),
-        );
-      }),
-    );
-  }
-}
-
-class StoryTopBar extends StatelessWidget {
-  final VoidCallback onClose;
-
-  const StoryTopBar({super.key, required this.onClose});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Story',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        IconButton(
-          icon: Icon(Icons.close, color: Colors.black),
-          onPressed: onClose,
-        )
-      ],
-    );
-  }
-}
 
 
 class StoryContent extends StatefulWidget {
-  final String imagePath;
+
   final VoidCallback onBack;
   final VoidCallback onNext;
   final VoidCallback onPause;
@@ -250,7 +197,7 @@ class StoryContent extends StatefulWidget {
 
   const StoryContent({
     super.key,
-    required this.imagePath,
+
     required this.onBack,
     required this.onNext,
     required this.onPause,
@@ -264,9 +211,6 @@ class StoryContent extends StatefulWidget {
 
 class _StoryContentState extends State<StoryContent>
     with AutomaticKeepAliveClientMixin {
-  bool _isNetworkImage(String path) {
-    return path.startsWith('http://') || path.startsWith('https://');
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -279,14 +223,14 @@ class _StoryContentState extends State<StoryContent>
         fit: StackFit.expand,
         children: [
           if(widget.storyPageInfo.storyType == StoryType.video) StoryVideoContent(
-            videoUrl: widget.imagePath,
+            videoUrl: widget.storyPageInfo.url,
             onBack: widget.onBack,
             onNext: widget.onNext,
             onPause: widget.onPause,
             onResume: widget.onResume,
           ),
           if(widget.storyPageInfo.storyType == StoryType.image) StoryImageContent(
-            imagePath: widget.imagePath,
+            imagePath: widget.storyPageInfo.url,
             onBack: widget.onBack,
             onNext: widget.onNext,
             onPause: widget.onPause,
@@ -294,7 +238,7 @@ class _StoryContentState extends State<StoryContent>
             storyPageInfo: widget.storyPageInfo,
           ),
           if(widget.storyPageInfo.storyType == StoryType.gif) StoryGifContent(
-            gifPath: widget.imagePath,
+            gifPath: widget.storyPageInfo.url,
             onBack: widget.onBack,
             onNext: widget.onNext,
             onPause: widget.onPause,
@@ -315,192 +259,6 @@ class _StoryContentState extends State<StoryContent>
 
   @override
   bool get wantKeepAlive => true; // 👈 mantiene vivo el widget
-}
-
-class StoryGifContent extends StatelessWidget {
-  final String gifPath;
-  final VoidCallback onBack;
-  final VoidCallback onNext;
-  final VoidCallback onPause;
-  final VoidCallback onResume;
-
-  const StoryGifContent({
-    super.key,
-    required this.gifPath,
-    required this.onBack,
-    required this.onNext,
-    required this.onPause,
-    required this.onResume,
-  });
-
-  bool _isNetworkGif(String path) {
-    return path.startsWith('http://') || path.startsWith('https://');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        _isNetworkGif(gifPath)
-            ? Image.network(
-          gifPath,
-          fit: BoxFit.cover,
-          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-            if (frame == null) {
-              onPause();
-              return const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              );
-            } else {
-              onResume();
-              return child;
-            }
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return const Center(
-              child: Icon(Icons.broken_image, color: Colors.white),
-            );
-          },
-        )
-            : Image.asset(
-          gifPath,
-          fit: BoxFit.cover,
-        ),
-      ],
-    );
-  }
-}
-
-
-
-class StoryVideoContent extends StatefulWidget {
-  final String videoUrl;
-  final VoidCallback onBack;
-  final VoidCallback onNext;
-  final VoidCallback onPause;
-  final VoidCallback onResume;
-
-  const StoryVideoContent({
-    super.key,
-    required this.videoUrl,
-    required this.onBack,
-    required this.onNext,
-    required this.onPause,
-    required this.onResume,
-  });
-
-  @override
-  State<StoryVideoContent> createState() => _StoryVideoContentState();
-}
-
-class _StoryVideoContentState extends State<StoryVideoContent> {
-  late VideoPlayerController _controller;
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = VideoPlayerController.networkUrl(Uri.parse( widget.videoUrl))
-      ..initialize().then((_) {
-        setState(() {
-          _isInitialized = true;
-          _controller.play();
-          widget.onResume();
-        });
-      })
-      ..addListener(() {
-        if (_controller.value.hasError) {
-          widget.onPause();
-        }
-      });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        _isInitialized
-            ? FittedBox(
-          fit: BoxFit.cover,
-          child: SizedBox(
-            width: _controller.value.size.width,
-            height: _controller.value.size.height,
-            child: VideoPlayer(_controller),
-          ),
-        )
-            : const Center(child: CircularProgressIndicator(color: Colors.white)),
-      ],
-    );
-  }
-}
-
-
-class StoryImageContent extends StatelessWidget {
-  final String imagePath;
-  final VoidCallback onBack;
-  final VoidCallback onNext;
-  final VoidCallback onPause;
-  final VoidCallback onResume;
-  final StoryPageInfo storyPageInfo;
-  const StoryImageContent({
-    super.key,
-    required this.imagePath,
-    required this.onBack,
-    required this.onNext,
-    required this.onPause,
-    required this.onResume,
-    required this.storyPageInfo,
-  });
-  bool _isNetworkImage(String path) {
-    return path.startsWith('http://') || path.startsWith('https://');
-  }
-  @override
-  Widget build(BuildContext context) {
-    return  Stack(
-      fit: StackFit.expand,
-      children: [
-      _isNetworkImage(imagePath)
-          ? Image.network(
-        imagePath,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) {
-            onResume();
-            return child;
-          } else {
-            onPause();
-          }
-          return Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                  (loadingProgress.expectedTotalBytes ?? 1)
-                  : null,
-              color: Colors.white,
-            ),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return const Center(
-            child: Icon(Icons.broken_image, color: Colors.white),
-          );
-        },
-      )
-          : Image.asset(
-        imagePath,
-        fit: BoxFit.cover,
-      ),
-    ],
-        );
-  }
 }
 
 
@@ -562,22 +320,7 @@ class _NetworkImageWithCallbackState extends State<NetworkImageWithCallback> {
   }
 }
 
-enum StoryType {
-  image,
-  gif,
-  video,
-}
 
-class StoryPageInfo{
-  final String url;
-  final StoryType storyType;
-  final Duration duration;
 
-  StoryPageInfo({
-    required this.url,
-    required this.storyType,
-    required this.duration,
-  });
-}
 
 
